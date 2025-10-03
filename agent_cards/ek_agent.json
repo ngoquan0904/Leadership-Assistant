@@ -1,0 +1,211 @@
+{
+    "name": "Enterprise Knowledge Agent",
+    "description": "An agent for enterprise knowledge management: supports HR information management, project management, and retrieval of software development business documents. Provides tools for employee profile search, project assignments, skill matching, and access to technical/process documentation.",
+    "url": "http://localhost:10004/",
+    "version": "1.0.0",
+    "capabilities": {
+        "streaming": true,
+        "pushNotifications": false,
+        "stateTransitionHistory": false
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "GetNeo4jSchema",
+            "name": "Get Neo4j Schema",
+            "description": "Retrieve the schema of the employee graph database.",
+            "tags": ["database", "schema", "graph", "neo4j"],
+            "examples": [
+                "Show me the database schema.",
+                "Get the structure of the employee graph."
+            ]
+        },
+        {
+            "id": "ReadNeo4jCypher",
+            "name": "Read Neo4j Cypher",
+            "description": "Query the employee graph database using Cypher.",
+            "tags": ["database", "query", "cypher", "neo4j"],
+            "examples": [
+                "Find all Python developers.",
+                "List people working on the Supply Chain Optimization Engine project."
+            ]
+        },
+        {
+            "id": "EmployeeSkillSearch",
+            "name": "Employee Skill Search",
+            "description": "Search for employees by skills, domain, or work type.",
+            "tags": ["employee", "search", "skills", "domain", "worktype"],
+            "examples": [
+                "Who has experience in AI?",
+                "Find all employees with cloud skills."
+            ]
+        },
+        {
+            "id": "ProjectAssignmentSearch",
+            "name": "Project Assignment Search",
+            "description": "Search for employees assigned to projects, including in-progress and completed projects.",
+            "tags": ["project", "assignment", "search", "status"],
+            "examples": [
+                "Who is currently assigned to a project?",
+                "How many people are not in any project?"
+            ]
+        },
+        {
+            "id": "GetRelevantChunks",
+            "name": "Get Relevant Chunks",
+            "description": "Retrieve software development business documents, technical guidelines, processes, templates, and reference materials.",
+            "tags": ["document", "software", "process", "template", "reference", "search"],
+            "examples": [
+                "Show me the software development process.",
+                "Find the template for project proposals.",
+                "Retrieve technical documentation for the API system."
+            ]
+        },
+        {
+            "id": "NotionProjectManager",
+            "name": "Project Manager (Notion)",
+            "description": "Manage and query project information, tasks, documentation, and assignments using Notion API tools.",
+            "tags": ["project", "manager", "notion", "tasks", "documentation", "database"],
+            "examples": [
+                "List all active projects in Notion.",
+                "Show tasks assigned to John Doe.",
+                "Retrieve documentation for the AI Platform project.",
+                "Create a new project in Notion.",
+                "Update the status of a task in Notion."
+            ]
+        },
+        {
+            "id": "API-get-user",
+            "name": "Get Notion User",
+            "description": "Retrieve information about a Notion user.",
+            "tags": ["notion", "user", "api"],
+            "examples": ["Get my Notion profile.", "Show user details for Jane Smith."]
+        },
+        {
+            "id": "API-get-users",
+            "name": "Get Notion Users",
+            "description": "Retrieve a list of Notion users.",
+            "tags": ["notion", "users", "api"],
+            "examples": ["List all Notion users."]
+        },
+        {
+            "id": "API-retrieve-a-page",
+            "name": "Retrieve Notion Page",
+            "description": "Retrieve a Notion page by ID.",
+            "tags": ["notion", "page", "api"],
+            "examples": ["Show the project overview page."]
+        },
+        {
+            "id": "API-create-a-database",
+            "name": "Create Notion Database",
+            "description": "Create a new database in Notion.",
+            "tags": ["notion", "database", "api"],
+            "examples": ["Create a new project database."]
+        },
+        {
+            "id": "API-update-a-database",
+            "name": "Update Notion Database",
+            "description": "Update an existing database in Notion.",
+            "tags": ["notion", "database", "api"],
+            "examples": ["Update the project database schema."]
+        },
+        {
+            "id": "API-retrieve-a-database",
+            "name": "Retrieve Notion Database",
+            "description": "Retrieve a database from Notion by ID.",
+            "tags": ["notion", "database", "api"],
+            "examples": ["Show the HR database."]
+        },
+        {
+            "id": "API-post-page",
+            "name": "Create Notion Page",
+            "description": "Create a new page in Notion.",
+            "tags": ["notion", "page", "api"],
+            "examples": ["Create a project summary page."]
+        },
+        {
+            "id": "API-patch-page",
+            "name": "Update Notion Page",
+            "description": "Update an existing page in Notion.",
+            "tags": ["notion", "page", "api"],
+            "examples": ["Update the status of a project page."]
+        },
+        {
+            "id": "API-retrieve-a-page-property",
+            "name": "Retrieve Notion Page Property",
+            "description": "Retrieve a property from a Notion page.",
+            "tags": ["notion", "page", "property", "api"],
+            "examples": ["Get the due date for a task page."]
+        },
+        {
+            "id": "API-post-database-query",
+            "name": "Query Notion Database",
+            "description": "Query a Notion database for specific records.",
+            "tags": ["notion", "database", "query", "api"],
+            "examples": ["Find all completed tasks in the project database."]
+        },
+        {
+            "id": "API-post-search",
+            "name": "Search Notion",
+            "description": "Search across Notion for pages, databases, or blocks.",
+            "tags": ["notion", "search", "api"],
+            "examples": ["Search for all documentation pages."]
+        },
+        {
+            "id": "API-get-block-children",
+            "name": "Get Notion Block Children",
+            "description": "Retrieve child blocks of a Notion block.",
+            "tags": ["notion", "block", "children", "api"],
+            "examples": ["Show all tasks in the project block."]
+        },
+        {
+            "id": "API-patch-block-children",
+            "name": "Update Notion Block Children",
+            "description": "Update child blocks of a Notion block.",
+            "tags": ["notion", "block", "children", "api"],
+            "examples": ["Add a new task to the project block."]
+        },
+        {
+            "id": "API-retrieve-a-block",
+            "name": "Retrieve Notion Block",
+            "description": "Retrieve a Notion block by ID.",
+            "tags": ["notion", "block", "api"],
+            "examples": ["Show the details of a specific block."]
+        },
+        {
+            "id": "API-update-a-block",
+            "name": "Update Notion Block",
+            "description": "Update a Notion block by ID.",
+            "tags": ["notion", "block", "api"],
+            "examples": ["Update the content of a block."]
+        },
+        {
+            "id": "API-delete-a-block",
+            "name": "Delete Notion Block",
+            "description": "Delete a Notion block by ID.",
+            "tags": ["notion", "block", "api"],
+            "examples": ["Remove a completed task block."]
+        },
+        {
+            "id": "API-retrieve-a-comment",
+            "name": "Retrieve Notion Comment",
+            "description": "Retrieve a comment from Notion.",
+            "tags": ["notion", "comment", "api"],
+            "examples": ["Show comments on the project page."]
+        },
+        {
+            "id": "API-create-a-comment",
+            "name": "Create Notion Comment",
+            "description": "Create a new comment in Notion.",
+            "tags": ["notion", "comment", "api"],
+            "examples": ["Add a comment to the project page."]
+        }
+    ]
+}

@@ -1,0 +1,81 @@
+{
+    "name": "Gmail Agent",
+    "description": "An agent that helps users manage and query their Gmail account. Supports searching, drafting, sending emails, retrieving messages and threads.",
+    "url": "http://localhost:10003/",
+    "version": "1.0.0",
+    "capabilities": {
+        "streaming": true,
+        "pushNotifications": true,
+        "stateTransitionHistory": false
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "GmailCreateContent",
+            "name": "Create Email Content",
+            "description": "Generate formatted email content with a signature for review before sending or drafting.",
+            "tags": ["gmail", "email", "content", "format"],
+            "examples": [
+                "Create email content to invite my friend to a party.",
+                "Generate an email to thank my professor for the recommendation."
+            ]
+        },
+        {
+            "id": "GmailCreateDraft",
+            "name": "Create Email Draft",
+            "description": "Create a draft email in the user's Gmail account.",
+            "tags": ["gmail", "draft", "email", "create"],
+            "examples": [
+                "Draft an email to John about the meeting.",
+                "Create a draft for my travel request."
+            ]
+        },
+        {
+            "id": "GmailSendMessage",
+            "name": "Send Email",
+            "description": "Send an email from the user's Gmail account.",
+            "tags": ["gmail", "send", "email", "message"],
+            "examples": [
+                "Send an email to Alice with the project update.",
+                "Email my manager the weekly report."
+            ]
+        },
+        {
+            "id": "GmailSearch",
+            "name": "Search Emails",
+            "description": "Search for emails in the user's Gmail account based on keywords, sender, or date.",
+            "tags": ["gmail", "search", "email", "query"],
+            "examples": [
+                "Find all emails from Google.",
+                "Search for emails about my flight booking."
+            ]
+        },
+        {
+            "id": "GmailGetMessage",
+            "name": "Get Email Message",
+            "description": "Retrieve the content of a specific email message.",
+            "tags": ["gmail", "get", "email", "message"],
+            "examples": [
+                "Show me the latest email from HR.",
+                "Get the details of the email about my invoice."
+            ]
+        },
+        {
+            "id": "GmailGetThread",
+            "name": "Get Email Thread",
+            "description": "Retrieve an entire email thread/conversation.",
+            "tags": ["gmail", "get", "email", "thread"],
+            "examples": [
+                "Show the conversation with Bob about the project.",
+                "Get the thread for my travel approval."
+            ]
+        }
+    ]
+}

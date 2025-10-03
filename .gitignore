@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.egg-info/
+
+# Jupyter Notebooks
+*.ipynb
+
+# Environment
+.env
+
+# VS Code
+.vscode/
+
+# Token and secrets
+client_secret*.json
+token*.json
+
+
+# Docker
+*.log
+docker-compose.yml
+Dockerfile
+
+# GraphDB
+*.pdf
+
+# Cache
+cache/
+
+# Ignore test outputs
+test_output/

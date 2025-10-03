@@ -1,0 +1,91 @@
+{
+    "name": "Calendar Agent",
+    "description": "An agent that helps users manage and query their Google Calendar. Supports searching, creating, updating, moving, and deleting events, as well as retrieving calendar info and current datetime.",
+    "url": "http://localhost:10002/",
+    "version": "1.0.0",
+    "capabilities": {
+        "streaming": true,
+        "pushNotifications": true,
+        "stateTransitionHistory": false
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "CalendarSearchEvents",
+            "name": "Search Events",
+            "description": "Search for events in the user's calendar based on time, date, or keywords.",
+            "tags": ["calendar", "search", "query", "event"],
+            "examples": [
+                "Do I have any meetings next Monday?",
+                "Find all events with 'project' in the title this week."
+            ]
+        },
+        {
+            "id": "CalendarCreateEvent",
+            "name": "Create Event",
+            "description": "Create a new event in the user's calendar.",
+            "tags": ["calendar", "event", "create"],
+            "examples": [
+                "Schedule a meeting with John at 10am on Friday.",
+                "Add a badminton match tomorrow from 19:00 to 20:00."
+            ]
+        },
+        {
+            "id": "CalendarUpdateEvent",
+            "name": "Update Event",
+            "description": "Update details of an existing event in the user's calendar.",
+            "tags": ["calendar", "event", "update"],
+            "examples": [
+                "Move my 2pm meeting to 3pm.",
+                "Change the location of my lunch appointment to Cafe ABC."
+            ]
+        },
+        {
+            "id": "CalendarMoveEvent",
+            "name": "Move Event",
+            "description": "Move an event to a different calendar.",
+            "tags": ["calendar", "event", "move"],
+            "examples": [
+                "Move my meeting with John to my work calendar.",
+                "Transfer the dentist appointment to my family calendar."
+            ]
+        },
+        {
+            "id": "CalendarDeleteEvent",
+            "name": "Delete Event",
+            "description": "Delete an event from the user's calendar.",
+            "tags": ["calendar", "event", "delete"],
+            "examples": [
+                "Remove my meeting with John tomorrow.",
+                "Delete my dentist appointment next Wednesday."
+            ]
+        },
+        {
+            "id": "GetCalendarsInfo",
+            "name": "Get Calendars Info",
+            "description": "Retrieve information about the user's calendars.",
+            "tags": ["calendar", "info", "list"],
+            "examples": [
+                "List all my calendars.",
+                "Show details of my work calendar."
+            ]
+        },
+        {
+            "id": "GetCurrentDatetime",
+            "name": "Get Current Datetime",
+            "description": "Get the current date and time.",
+            "tags": ["calendar", "datetime", "now"],
+            "examples": [
+                "What is the current time?",
+                "Tell me today's date."
+            ]
+        }
+    ]
+}
