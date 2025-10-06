@@ -27,7 +27,6 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools.tool_context import ToolContext
 from google.genai import types
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
-from utils.search import SolrSearch
 from .remote_agent_connection import RemoteAgentConnections
 from dotenv import load_dotenv
 load_dotenv()
@@ -86,14 +85,13 @@ class HostAgent:
             tools=[
                 self.send_message,
                 self.tavily_search,
-                self.get_relevant_chunks
             ]
         )
 
     def root_instruction(self, context: ReadonlyContext) -> str:
         return (
-            "You are the Host Agent. You can interact with three specialized agents: Calendar Agent, Gmail Agent, and HRSearch Agent.\n\n"
-            "You also have access to two tools: a Web Search Tool and a Get Relevant Chunks Tool.\n\n"
+            "You are the Host Agent. You can interact with three specialized agents: Calendar Agent, Gmail Agent, and Enterprise Knowledge Agent.\n\n"
+            "You also have access to tavily_search tool.\n\n"
             "1. Calendar Agent:\n"
             "- Use this agent for any query related to creating, deleting, or updating calendar events, meetings, schedules, or appointments.\n"
             "- Before forwarding a request, check if the user's query includes a specific date and time.\n"
@@ -106,27 +104,20 @@ class HostAgent:
             "- If the user wants to write or create email content, do NOT write the email content yourself. Forward the request to the Gmail Agent to create the email content, and always append: 'Please send back the full content of the generated email (including subject, body, closing, and signature) after creation.'\n"
             "- Do not send the email until the user has confirmed the content.\n"
             "- If the Gmail Agent requests additional information, forward that request to the user and wait for their response before proceeding.\n\n"
-            "3. HRSearch Agent:\n"
-            "- Use this agent for any query related to searching HR information, such as employee details, policies, leave balances, or organizational structure.\n"
-            "- For project management queries, use the HRSearch Agent's Notion Project Manager tools.\n"
+            "3. Enterprise Knowledge Agent:\n"
+            "- Use this agent for any query related to HR information (employee details, policies, leave balances, organizational structure), project management (tasks, progress, members, documentation, status updates, assignments, reports), or any question about business processes, technical guidelines, modeling workflows, templates, forms, or retrieval of software development business documents and reference materials.\n"
+            "- For project management queries, use the Enterprise Knowledge Agent's Notion Project Manager tools.\n"
+            "- The Enterprise Knowledge Agent can also retrieve software development business documents, technical guidelines, processes, templates, and reference materials.\n"
             "- Notion Project Manager is strictly for managing actual projects (tasks, progress, members, project documentation, status updates, assignments, reports) that are being executed. It is NOT for retrieving general software development documents, guidelines, forms, or templates.\n"
-            "- Before forwarding a request, ensure the user's query specifies what HR or project management information is needed (e.g., employee name, department, policy type, project name, task, documentation).\n"
-            "- If the query is ambiguous, ask the user to clarify before forwarding to the HRSearch Agent.\n"
-            "- Only forward the query to the HRSearch Agent using the send_message tool when the information needed is clear.\n"
-            "- If the HRSearch Agent requests additional information, forward that request to the user and wait for their response before proceeding.\n\n"
+            "- Before forwarding a request, ensure the user's query specifies what HR, project management, or software development business information is needed (e.g., employee name, department, policy type, project name, task, documentation, technical guideline, template).\n"
+            "- If the query is ambiguous, ask the user to clarify before forwarding to the Enterprise Knowledge Agent.\n"
+            "- Only forward the query to the Enterprise Knowledge Agent using the send_message tool when the information needed is clear.\n"
+            "- If the Enterprise Knowledge Agent requests additional information, forward that request to the user and wait for their response before proceeding.\n\n"
             "4. tavily_search tool:\n"
             "- Only use this tool if the question is not related to calendar, Gmail, HR, or project management, and you cannot answer from your own knowledge.\n"
             "- Use it if the query requires very recent or updated information that may not be part of your existing knowledge.\n"
             "- Do not overuse the tavily_search Tool for questions you already know the answer to.\n"
             "- Return the search result directly to the user.\n\n"
-            "5. get_relevant_chunks tool:\n"
-            "- Only use this tool when the user's query is clearly related to retrieving general documents, regulations, guidelines, processes, forms, templates, or reference materials in the context of software development.\n"
-            "- Do NOT use this tool for project management queries, HR, email, calendar, or any topic outside software development documentation.\n"
-            "- If the user's query is about decisions, proposals, implementation details, or documentation within a specific project (for example, 'How was graphDocument proposed in the TableQA project?'), you MUST use the Notion Project Manager tool instead.\n"
-            "- If the user's query is ambiguous or overlaps between project management and software development documentation (for example, the question could refer to both project decisions and technical documents), you MUST use BOTH tools: get_relevant_chunks and Notion Project Manager, and combine the results for the user.\n"
-            "- If the user's query is about forms, templates, or sample documents, and the retrieved chunks contain relevant links, present those links directly to the user as references.\n"
-            "- If the retrieved chunks include content that contains images (for example, image URLs), render those images directly in your answer along with any explanatory text.\n"
-            "- Otherwise, return the most relevant retrieved information clearly and completely to the user.\n\n"
             "General Instructions:\n"
             "- Always provide answers that are clear, complete, and well-structured. Avoid overly brief or one-line responses.\n"
             "- When you receive a response from any agent or tool, return only the result based on their response to the user.\n"
@@ -140,11 +131,7 @@ class HostAgent:
         search_result = self.web_search_tool.run(query)
         # print(search_result)  
         return search_result
-    
-    async def get_relevant_chunks(self, query: str) -> str:
-        context = self.solr_search.get_relevant_context(query)
-        # print(context)  
-        return context
+
     
     async def send_message(self, agent_name: str, task: str, tool_context: ToolContext):
         if "_" in agent_name:

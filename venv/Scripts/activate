@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="D:\Document\Agent\CalendarAgent\venv"
+VIRTUAL_ENV="D:\Document\Agent\LeadershipAssistant\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

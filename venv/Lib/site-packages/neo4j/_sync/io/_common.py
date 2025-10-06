@@ -21,16 +21,15 @@ from struct import pack as struct_pack
 
 from ..._async_compat.util import Util
 from ..._exceptions import SocketDeadlineExceededError
-from ...api import Version
+from ..._io import BoltProtocolVersion
 from ...exceptions import (
     Neo4jError,
     ServiceUnavailable,
     SessionExpired,
-    UnsupportedServerProduct,
 )
 
 
-GQL_ERROR_AWARE_PROTOCOL = Version(5, 7)
+GQL_ERROR_AWARE_PROTOCOL = BoltProtocolVersion(5, 7)
 
 log = logging.getLogger("neo4j.io")
 
@@ -329,20 +328,6 @@ class ResetResponse(Response):
 
 class CommitResponse(Response):
     pass
-
-
-def check_supported_server_product(agent):
-    """
-    Check that a server product is supported by the driver.
-
-    This is done by inspecting the server agent string.
-
-    :param agent: server agent string to check for validity
-
-    :raises UnsupportedServerProduct: if the product is not supported
-    """
-    if not agent.startswith("Neo4j/"):
-        raise UnsupportedServerProduct(agent)
 
 
 def receive_into_buffer(sock, buffer, n_bytes):
