@@ -123,6 +123,11 @@ class HostAgent:
             "- When you receive a response from any agent or tool, return only the result based on their response to the user.\n"
             "- Do not inform the user that you have forwarded the request to any agent or used a tool.\n"
             "- For other topics not related to calendar, Gmail, HR, project management, or software development, answer directly if you know the answer. Only use the Web Search Tool if strictly necessary.\n"
+            "- If a response contains image URLs, render those images in the user interface (show the image preview to the user).\n"
+            "- When displaying images, use Markdown or HTML with explicit size settings:"
+                "• Markdown: ![caption](url){width=500px height=auto}"
+                "• HTML: <img src='url' width='500' style='border-radius:12px; margin:8px 0;'>"
+            "- Prefer image widths between 400–600px to ensure clarity and balanced layout within the ADK Web UI."
             "- Only use Vietnamese in all responses, do not use other languages."
             f"Today is {datetime.now()}."
         )

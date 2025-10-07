@@ -22,7 +22,20 @@ def get_mcp_server_config(port, transport) -> ServerConfig:
         transport=transport,
         url=f'http://127.0.0.1:{port}/mcp/'
     )
-
+async def get_notion_tools():
+    config = get_mcp_server_config(port=3000, transport='streamable_http')
+    logger.info(f"MCP Server url={config.url}")
+    client = MultiServerMCPClient(
+            {
+                "all_tools": {
+                    "url": config.url,
+                    "transport": config.transport,
+                    "headers": {"Authorization": "Bearer my_auth_token"}
+                },
+            }
+        )
+    tools = await client.get_tools()
+    return tools
 async def get_neo4j_tools():
     config = get_mcp_server_config(port=8001, transport='sse')
     logger.info(f"MCP Server url={config.url}")
@@ -41,20 +54,7 @@ async def get_neo4j_tools():
             selected_tools.append(tool)
     print(selected_tools)
     return selected_tools
-async def get_notion_tools():
-    config = get_mcp_server_config(port=3000, transport='streamable_http')
-    logger.info(f"MCP Server url={config.url}")
-    client = MultiServerMCPClient(
-            {
-                "all_tools": {
-                    "url": config.url,
-                    "transport": config.transport,
-                    "headers": {"Authorization": "Bearer my_auth_token"}
-                },
-            }
-        )
-    tools = await client.get_tools()
-    return tools
+
 
 class ResponseFormat(BaseModel):
     """Respond to the user in this format."""
@@ -95,8 +95,13 @@ class EnterpriseKnowledgeAgent(BaseAgent):
         - Always provide a clear, structured, and detailed answer that directly addresses the question.
         - If the result is related to HR, always return both name and ID, never just the ID.
         - Avoid mentioning or describing the tools, databases, or internal processes used to get the result. The answer should read naturally, as if you already know the information.
-        - If the user's query is about forms, templates, or sample documents, and the retrieved chunks contain relevant links, present those links directly to the user as references.
-        - If the retrieved chunks include content that contains images (for example, image URLs), render those images directly in your answer along with any explanatory text.
+        - If the user's query is about forms, templates, or sample documents, only return links that are truly relevant to the user's query; do not list unrelated links.
+        - If the retrieved chunks contain images (e.g., image URLs), return the image link embedded in the text, starting with http.
+          For example, convert:
+          ![](http://localhost:9000/test-bucket/leadership_assistant/images/QT.CNVTQD.CNTT.9.5.1.DM.PL01._Xay_dung_mo_hinh_du_lieu/image_010_page_15.png)
+          to:
+          (http://localhost:9000/test-bucket/leadership_assistant/images/QT.CNVTQD.CNTT.9.5.1.DM.PL01._Xay_dung_mo_hinh_du_lieu/image_010_page_15.png)
+        - If the query is about forms, templates, or sample documents, only return reference links that are truly relevant to the query.
         - Always enrich your answer with additional useful context, insights, or explanations whenever possible, so the response is comprehensive and actionable for the user.
 
         Always use information from previous queries when possible instead of asking the user again.
