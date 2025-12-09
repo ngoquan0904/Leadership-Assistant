@@ -1,7 +1,8 @@
 import json
 from neo4j import GraphDatabase, RoutingControl
-from person import Person
-from config import *
+from graphdb.person import Person
+from graphdb.config import *
+from graphdb.logger import logger
 
 def chunks(xs, n=10):
     n = max(1, n)
@@ -17,12 +18,20 @@ class KnowledgeGraph:
     def __init__(self):
         self.driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
     def test_connection(self):
-        self.driver.execute_query("MATCH(n) RETURN count(n)")
+        try:
+            self.driver.execute_query("MATCH(n) RETURN count(n)")
+            logger.info("Neo4j connection successful")
+        except Exception as e:
+            logger.error(f"Neo4j connection failed: {e}")
     
     def refresh_graph(self):
+        logger.info("Refreshing graph: Deleting all nodes and relationships")
         self.driver.execute_query("MATCH(N) DETACH DELETE N")
+        logger.info("Graph cleared")
+
     @staticmethod
     def merge_skills_accomplishments(people_json, type):
+        logger.info(f"Merging {type} for all people")
         results = []
         for person in people_json:
             tmp_results = person[type].copy()
@@ -31,6 +40,7 @@ class KnowledgeGraph:
             results.extend(tmp_results)
         return results
     def initialize_graph(self, people_json):
+        logger.info("Initializing graph constraints and indexes")
         self.driver.execute_query(
             'CREATE CONSTRAINT IF NOT EXISTS FOR (n:Person) REQUIRE (n.id) IS NODE KEY',
             routing_=RoutingControl.WRITE
@@ -55,6 +65,8 @@ class KnowledgeGraph:
             'CREATE CONSTRAINT IF NOT EXISTS FOR (n:WorkType) REQUIRE (n.name) IS NODE KEY',
             routing_=RoutingControl.WRITE
         )
+        
+        logger.info(f"Importing {len(people_json)} people into graph")
         for chunk in chunks(people_json):
             records = self.driver.execute_query(
                 """
@@ -73,10 +85,12 @@ class KnowledgeGraph:
                 result_transformer_= lambda r: r.data(),
                 records = chunk
             )
-            print(records)
+            logger.info(f"Upserted Person records: {records}")
         
         merged_skills = self.merge_skills_accomplishments(people_json, type="skills")
         merged_accomplishments = self.merge_skills_accomplishments(people_json, type="accomplishments")
+        
+        logger.info(f"Importing {len(merged_skills)} skills relationships")
         for chunk in chunks(merged_skills):
             records = self.driver.execute_query(
                 # MATCH tìm person theo personID, nếu không có thì skip
@@ -98,7 +112,9 @@ class KnowledgeGraph:
                 result_transformer_=lambda r: r.data(),
                 records = chunk
             )
-            print(records)
+            logger.info(f"Upserted Skill relationships: {records}")
+        
+        logger.info(f"Importing {len(merged_accomplishments)} accomplishments")
         for chunk in chunks(merged_accomplishments):
             records = self.driver.execute_query(
                 """
@@ -130,19 +146,21 @@ class KnowledgeGraph:
                 result_transformer_= lambda r: r.data(),
                 records = chunk
             )
-            print(records)
+            logger.info(f"Upserted Accomplishment records: {records}")
 
 if __name__ == "__main__":
+    logger.info("Starting Knowledge Graph update")
     knowledge_graph = KnowledgeGraph()
-    # knowledge_graph.test_connection()
-    # knowledge_graph.refresh_graph()
-    result = knowledge_graph.driver.execute_query("MATCH (n:Person) RETURN count(n) AS cnt")
-    person_count = result.records[0]['cnt'] if result.records else 0
-    if person_count == 0:
-        people = load_person_infor()
-        knowledge_graph.initialize_graph(people)
-    else:
-        print(f"Neo4j đã có {person_count} node Person, bỏ qua bước nạp dữ liệu.")
+    knowledge_graph.test_connection()
+    knowledge_graph.refresh_graph()
+    # result = knowledge_graph.driver.execute_query("MATCH (n:Person) RETURN count(n) AS cnt")
+    # person_count = result.records[0]['cnt'] if result.records else 0
+    # if person_count == 0:
+    #     people = load_person_infor()
+    #     knowledge_graph.initialize_graph(people)
+    # else:
+    #     logger.info(f"Neo4j already has {person_count} Person nodes, skipping data load.")
+    logger.info("Knowledge Graph update finished")
 # sửa resume về hết tiếng việt và up lên neo4j
 # test mcp server với neo4j trước
 # thêm notion vào tools, sửa prompt của cả agent và orchestrator

@@ -1,7 +1,7 @@
 {
     "name": "Calendar Agent",
     "description": "An agent that helps users manage and query their Google Calendar. Supports searching, creating, updating, moving, and deleting events, as well as retrieving calendar info and current datetime.",
-    "url": "http://localhost:10002/",
+    "url": "http://calendar_agent:10002/",
     "version": "1.0.0",
     "capabilities": {
         "streaming": true,

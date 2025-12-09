@@ -1,7 +1,7 @@
 {
     "name": "Enterprise Knowledge Agent",
     "description": "An agent for enterprise knowledge management: supports HR information management, project management, and retrieval of software development business documents. Provides tools for employee profile search, project assignments, skill matching, and access to technical/process documentation.",
-    "url": "http://localhost:10004/",
+    "url": "http://ek_agent:10004/",
     "version": "1.0.0",
     "capabilities": {
         "streaming": true,

@@ -32,6 +32,7 @@ class Thing(BaseModel):
                                        "Concat the person id to this name to ensure uniqueness across multiple people.")
     type: WorkType = Field(..., description="Type of thing")
     domain: Domain = Field(..., description="Domain/category of thing")
+    
 class SkillName(str, Enum):
     """Standardized skill names"""
     # AI/ML Skills

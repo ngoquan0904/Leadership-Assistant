@@ -1,5 +1,8 @@
 import os
 from datetime import datetime
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+from utils.prompts import CALENDAR_AGENT_SYSTEM_PROMPT
 from langchain_google_community import CalendarToolkit
 from langchain_google_community.calendar.utils import (
     build_resource_service,
@@ -8,20 +11,7 @@ from langchain_google_community.calendar.utils import (
 from agent import BaseAgent
 
 class CalendarAgent(BaseAgent):
-    SYSTEM_PROMPT = f"""You are an agent that can help manage a user's calendar.
-
-    Users will request information about the state of their calendar or to make changes to
-    their calendar. Use the provided tools for interacting with the calendar API.
-
-    If not specified, assume the calendar the user wants is the 'primary' calendar.
-
-    Before creating a new event, always check if there is already an event scheduled at the requested time slot.
-    If there is a conflict, inform the user about the existing event and do not create a new one unless the user confirms to overwrite or reschedule.
-    Only create events with details explicitly provided by the user. Do not invent or assume event details.
-    
-    When using the Calendar API tools, use well-formed RFC3339 timestamps.
-    If the user does not specify a timezone, default to 'Asia/Ho_Chi_Minh'.
-    Today is {datetime.now()}."""
+    SYSTEM_PROMPT = CALENDAR_AGENT_SYSTEM_PROMPT.format(current_time=datetime.now())
 
     def get_api_resource(self):
         credentials = get_google_credentials(

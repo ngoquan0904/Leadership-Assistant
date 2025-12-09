@@ -1,7 +1,7 @@
 {
     "name": "Gmail Agent",
     "description": "An agent that helps users manage and query their Gmail account. Supports searching, drafting, sending emails, retrieving messages and threads.",
-    "url": "http://localhost:10003/",
+    "url": "http://gmail_agent:10003/",
     "version": "1.0.0",
     "capabilities": {
         "streaming": true,

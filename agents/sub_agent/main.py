@@ -27,8 +27,18 @@ async def get_agent_executor(agent_card: AgentCard):
             return AgentExecutor(agent)
         elif agent_card.name == "Enterprise Knowledge Agent":
             logger.info(f"Initialize {agent_card.name}")
-            agent = await EnterpriseKnowledgeAgent.create()
-            return AgentExecutor(agent)
+            max_retries = 10
+            retry_delay = 5
+            for attempt in range(max_retries):
+                try:
+                    agent = await EnterpriseKnowledgeAgent.create()
+                    return AgentExecutor(agent)
+                except Exception as e:
+                    logger.error(f"Failed to initialize {agent_card.name} (attempt {attempt + 1}/{max_retries}): {e}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise e
     except Exception as e:
         raise e
     

@@ -2,6 +2,7 @@ import asyncio
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from utils.prompts import HOST_AGENT_ROOT_INSTRUCTION
 import json
 import uuid
 from datetime import datetime
@@ -50,6 +51,7 @@ class HostAgent:
             session_service=InMemorySessionService(),
             memory_service=InMemoryMemoryService()
         )
+        
     async def _async_init_components(self, remote_agent_addresses: List[str]):
         """Tạo connections instance đến các remote agent"""
         async with httpx.AsyncClient(timeout=120) as client:
@@ -89,48 +91,7 @@ class HostAgent:
         )
 
     def root_instruction(self, context: ReadonlyContext) -> str:
-        return (
-            "You are the Host Agent. You can interact with three specialized agents: Calendar Agent, Gmail Agent, and Enterprise Knowledge Agent.\n\n"
-            "You also have access to tavily_search tool.\n\n"
-            "1. Calendar Agent:\n"
-            "- Use this agent for any query related to creating, deleting, or updating calendar events, meetings, schedules, or appointments.\n"
-            "- Before forwarding a request, check if the user's query includes a specific date and time.\n"
-            "- If the date and time are missing, ask the user to provide complete information before forwarding to the Calendar Agent.\n"
-            "- If the user's query already mentions a time reference such as 'today', 'tomorrow', 'next week', or similar, treat it as having a date and do not request the user to specify the date again.\n"
-            "- Only forward the query to the Calendar Agent using the send_message tool when the date and time are clear.\n"
-            "- If the Calendar Agent requests additional information, forward that request to the user and wait for their response before proceeding.\n\n"
-            "2. Gmail Agent:\n"
-            "- Use this agent for any query related to managing Gmail, such as searching, sending, drafting, or retrieving emails.\n"
-            "- If the user wants to write or create email content, do NOT write the email content yourself. Forward the request to the Gmail Agent to create the email content, and always append: 'Please send back the full content of the generated email (including subject, body, closing, and signature) after creation.'\n"
-            "- Do not send the email until the user has confirmed the content.\n"
-            "- If the Gmail Agent requests additional information, forward that request to the user and wait for their response before proceeding.\n\n"
-            "3. Enterprise Knowledge Agent:\n"
-            "- Use this agent for any query related to HR information (employee details, policies, leave balances, organizational structure), project management (tasks, progress, members, documentation, status updates, assignments, reports), or any question about business processes, technical guidelines, modeling workflows, templates, forms, or retrieval of software development business documents and reference materials.\n"
-            "- For project management queries, use the Enterprise Knowledge Agent's Notion Project Manager tools.\n"
-            "- The Enterprise Knowledge Agent can also retrieve software development business documents, technical guidelines, processes, templates, and reference materials.\n"
-            "- Notion Project Manager is strictly for managing actual projects (tasks, progress, members, project documentation, status updates, assignments, reports) that are being executed. It is NOT for retrieving general software development documents, guidelines, forms, or templates.\n"
-            "- Before forwarding a request, ensure the user's query specifies what HR, project management, or software development business information is needed (e.g., employee name, department, policy type, project name, task, documentation, technical guideline, template).\n"
-            "- If the query is ambiguous, ask the user to clarify before forwarding to the Enterprise Knowledge Agent.\n"
-            "- Only forward the query to the Enterprise Knowledge Agent using the send_message tool when the information needed is clear.\n"
-            "- If the Enterprise Knowledge Agent requests additional information, forward that request to the user and wait for their response before proceeding.\n\n"
-            "4. tavily_search tool:\n"
-            "- Only use this tool if the question is not related to calendar, Gmail, HR, or project management, and you cannot answer from your own knowledge.\n"
-            "- Use it if the query requires very recent or updated information that may not be part of your existing knowledge.\n"
-            "- Do not overuse the tavily_search Tool for questions you already know the answer to.\n"
-            "- Return the search result directly to the user.\n\n"
-            "General Instructions:\n"
-            "- Always provide answers that are clear, complete, and well-structured. Avoid overly brief or one-line responses.\n"
-            "- When you receive a response from any agent or tool, return only the result based on their response to the user.\n"
-            "- Do not inform the user that you have forwarded the request to any agent or used a tool.\n"
-            "- For other topics not related to calendar, Gmail, HR, project management, or software development, answer directly if you know the answer. Only use the Web Search Tool if strictly necessary.\n"
-            "- If a response contains image URLs, render those images in the user interface (show the image preview to the user).\n"
-            "- When displaying images, use Markdown or HTML with explicit size settings:"
-                "• Markdown: ![caption](url){width=500px height=auto}"
-                "• HTML: <img src='url' width='500' style='border-radius:12px; margin:8px 0;'>"
-            "- Prefer image widths between 400–600px to ensure clarity and balanced layout within the ADK Web UI."
-            "- Only use Vietnamese in all responses, do not use other languages."
-            f"Today is {datetime.now()}."
-        )
+        return HOST_AGENT_ROOT_INSTRUCTION.format(current_time=datetime.now())
 
     async def tavily_search(self, query: str) -> str:
         search_result = self.web_search_tool.run(query)
@@ -274,11 +235,9 @@ class HostAgent:
                 }
 def _get_initialize_host_agent_sync():
     async def _async_main():
-        agent_urls = [
-            # "http://localhost:10002",
-            # "http://localhost:10003",
-            "http://localhost:10004"
-        ]
+        raw_agent_urls = os.getenv("AGENT_URLS", '[]')
+        print(f"DEBUG: AGENT_URLS from env: {raw_agent_urls}")
+        agent_urls = json.loads(raw_agent_urls)
         print("Initializing host agent")
         hosting_agent_instance = await HostAgent.create(
             remote_agent_addresses=agent_urls
