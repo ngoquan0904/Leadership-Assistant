@@ -19,7 +19,8 @@ from a2a.types import (
     SendMessageSuccessResponse,
     Task
 )
-from google.adk import Agent
+from google.adk.agents import Agent, RunConfig
+from google.adk.agents.run_config import StreamingMode
 from google.adk.runners import Runner
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.artifacts import InMemoryArtifactService
@@ -32,6 +33,9 @@ from .remote_agent_connection import RemoteAgentConnections
 from dotenv import load_dotenv
 load_dotenv()
 nest_asyncio.apply()
+import logging
+
+logger = logging.getLogger(__name__)
 
 class HostAgent:
     def __init__(self):
@@ -190,11 +194,13 @@ class HostAgent:
                     resp.extend(artifact["parts"])
         print("Response: ", resp)
         return resp
-    async def stream(self, query: str, session_id: str) -> AsyncIterable[dict[str, Any]]:
+    async def stream(self, query: str, session_id: str, stream: bool = True) -> AsyncIterable[dict[str, Any]]:
+        run_config = RunConfig(
+            streaming_mode=StreamingMode.NONE if not stream else StreamingMode.SSE,
+        )
         session = await self._runner.session_service.get_session(
-            app_name=self._agent_name,
+            app_name=self._agent.name,
             user_id=self._user_id,
-            state={},
             session_id=session_id
         )
         # tạo message từ query cuar user
@@ -209,11 +215,13 @@ class HostAgent:
         
         async for event in self._runner.run_async(
             user_id=self._user_id, session_id=session_id, new_message=content
+            # , run_config=run_config
         ):
             """
             - nếu là final response thì lấy text từ các parts trong event ra
             - chưa thì là đang thinking
             """
+            logger.info("Event: %s", event)
             if event.is_final_response():
                 response = ""
                 if (

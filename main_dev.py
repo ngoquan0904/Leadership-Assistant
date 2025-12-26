@@ -20,7 +20,6 @@ from langchain_core.prompts import PromptTemplate
 from DocumentExtraction.extract_document import DocumentExtraction
 from DocumentExtraction.chunking import ChunkModule
 from DocumentExtraction.minio_client import MinioClientWrapper
-from DocumentExtraction.s3 import S3ClientWrapper
 from DocumentExtraction.db import QdrantVectorstore
 from DocumentExtraction.utils import _folder_name_from_filename, parse_image_path
 from utils.minio import MinioClientWrapper
