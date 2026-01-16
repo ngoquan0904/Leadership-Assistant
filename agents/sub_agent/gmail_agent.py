@@ -3,6 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from langchain_google_community import GmailToolkit
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_community.gmail.utils import (
@@ -98,7 +99,9 @@ def create_content_email(request: str) -> str:
     return f"{email_content}\nDo you want any edits to this email?"
     
 class GmailAgent(BaseAgent):
-    SYSTEM_PROMPT = GMAIL_AGENT_SYSTEM_PROMPT.format(current_time=datetime.now())
+    def __init__(self, tools=None):
+        self.SYSTEM_PROMPT = GMAIL_AGENT_SYSTEM_PROMPT
+        super().__init__(tools)
 
     def get_api_resource(self):
         credential = get_gmail_credentials(

@@ -1,7 +1,10 @@
 import random
 import os
+import logging
+import json
 from collections.abc import AsyncIterable
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from typing import Any, List, Literal
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -13,6 +16,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 load_dotenv()
 memory = MemorySaver()
+logger = logging.getLogger(__name__)
 
 class ResponseFormat(BaseModel):
     """Respond to the user in this format."""
@@ -66,8 +70,10 @@ class BaseAgent:
         }
     async def stream(self, query, context_id) -> AsyncIterable[dict[str, Any]]:
         config: RunnableConfig = {"configurable": {"thread_id": context_id}}
-        today_str = f"Today's date is {date.today().strftime('%Y-%m-%d')}."
-        augmented_query = f"{today_str}\n\nUser query: {query}"
+        now_vn = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+        today_str = f"Today's date is {now_vn.strftime('%Y-%m-%d')}."
+        time_str = f"Current time is {now_vn.strftime('%H:%M:%S')} (Asia/Ho_Chi_Minh timezone, UTC+7)."
+        augmented_query = f"{today_str}\n{time_str}\n\nUser query: {query}"
         input = {"messages": [("user", augmented_query)]}
 
         async for item in self.graph.astream(input, config, stream_mode="values"):
@@ -78,12 +84,15 @@ class BaseAgent:
                 and len(message.tool_calls) > 0
             ):
                 tool_names = [call["name"] for call in message.tool_calls]
+                for call in message.tool_calls:
+                    logger.info(f"Agent is calling tool: {call['name']} with arguments: {json.dumps(call['args'], ensure_ascii=False)}")
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,
                     "content": f"Calling tool(s): {', '.join(tool_names)}"
                 }
             elif isinstance(message, ToolMessage):
+                logger.info(f"Tool {message.name} returned: {message.content}")
                 yield {
                     "is_task_complete": False,
                     "require_user_input": False,

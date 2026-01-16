@@ -6,6 +6,7 @@ from utils.prompts import HOST_AGENT_ROOT_INSTRUCTION
 import json
 import uuid
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Any, AsyncIterable, List
 
 import httpx
@@ -76,6 +77,28 @@ class HostAgent:
         ]
         print("agent_infor:", agent_info)
         self.agents = "\n".join(agent_info) if agent_info else "No agent found."
+
+    async def add_remote_agent(self, address: str):
+        """Dynamically add a remote agent by its base address (e.g. http://calendar_agent:10002)."""
+        async with httpx.AsyncClient(timeout=120) as client:
+            card_resolver = A2ACardResolver(client, address)
+            try:
+                card = await card_resolver.get_agent_card()
+                remote_connection = RemoteAgentConnections(
+                    agent_card=card, agent_url=address
+                )
+                self.remote_agent_connections[card.name] = remote_connection
+                self.cards[card.name] = card
+                # update agents string
+                agent_info = [
+                    json.dumps({"name": c.name, "description": c.description})
+                    for c in self.cards.values()
+                ]
+                self.agents = "\n".join(agent_info) if agent_info else "No agent found."
+                return card
+            except Exception as e:
+                logger.error(f"Failed to add remote agent {address}: {e}")
+                raise
     @classmethod
     async def create(cls, remote_agent_addresses: List[str]):
         instance = cls()
@@ -95,7 +118,7 @@ class HostAgent:
         )
 
     def root_instruction(self, context: ReadonlyContext) -> str:
-        return HOST_AGENT_ROOT_INSTRUCTION.format(current_time=datetime.now())
+        return HOST_AGENT_ROOT_INSTRUCTION.format(current_time=datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")))
 
     async def tavily_search(self, query: str) -> str:
         search_result = self.web_search_tool.run(query)

@@ -1,20 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import Chat from './components/Chat';
-import { MessageSquare, Plus, Trash2, Menu, PanelLeftClose, PanelLeftOpen, MoreHorizontal, Search } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Menu, PanelLeftClose, PanelLeftOpen, MoreHorizontal, Search, LayoutGrid, Bot } from 'lucide-react';
 
 function App() {
   const [sessions, setSessions] = useState(() => {
-    const saved = localStorage.getItem('chat_sessions');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('chat_sessions');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Failed to load sessions', e);
+      return [];
+    }
   });
   
-  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeSessionId, setActiveSessionId] = useState(() => {
+    return localStorage.getItem('active_session_id') || null;
+  });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [openMenuSessionId, setOpenMenuSessionId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftSession, setDraftSession] = useState(null);
+  const [showMarketplace, setShowMarketplace] = useState(false);
   const commitLockRef = React.useRef(new Set());
+
+  // Initialization: ensure we have an active session
+  useEffect(() => {
+    if (!activeSessionId || (activeSessionId && !sessions.some(s => s.id === activeSessionId))) {
+      createNewSession(true);
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('chat_sessions', JSON.stringify(sessions));
@@ -25,11 +41,6 @@ function App() {
       localStorage.setItem('active_session_id', activeSessionId);
     }
   }, [activeSessionId]);
-
-  // Always start with a new draft session
-  useEffect(() => {
-    createNewSession(true);
-  }, []);
 
   // Debug logging to help trace session lifecycle
   useEffect(() => {
@@ -145,7 +156,15 @@ function App() {
     }));
   };
 
-  const activeSession = (draftSession && draftSession.id === activeSessionId) ? draftSession : sessions.find(s => s.id === activeSessionId);
+  const activeSession = (draftSession && draftSession.id === activeSessionId) 
+    ? draftSession 
+    : sessions.find(s => s.id === activeSessionId) || sessions[0] || draftSession;
+
+  useEffect(() => {
+    if (activeSession && activeSession.id !== activeSessionId) {
+        setActiveSessionId(activeSession.id);
+    }
+  }, [activeSession, activeSessionId]);
 
   return (
     <div className="h-screen w-full flex bg-gray-50 overflow-hidden">
@@ -160,145 +179,203 @@ function App() {
       {/* Sidebar */}
       <div className={`
         fixed md:static inset-y-0 left-0 z-30
-        w-64 bg-white border-r border-gray-200 text-gray-800 flex flex-col transition-all duration-300 ease-in-out
+        w-72 bg-[#f8fafc] border-r border-slate-200/60 text-slate-800 flex flex-col transition-all duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden'}
       `}>
-        <div className="p-4 border-b border-gray-100 flex items-center justify-center relative">
-          <h2 className="font-bold text-lg text-blue-600 hidden">Leadership Assistant</h2>
-          <div className="flex items-center gap-1 absolute right-2">
-            <button 
-                onClick={createNewSession}
-                className="p-2 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-full transition-colors"
-                title="New Chat"
-            >
-                <Plus className="w-5 h-5" />
-            </button>
-            <button 
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-full transition-colors md:hidden"
-            >
-                <PanelLeftClose className="w-5 h-5" />
-            </button>
-             <button 
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-full transition-colors hidden md:block"
-                title="Close Sidebar"
-            >
-                <PanelLeftClose className="w-5 h-5" />
-            </button>
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 ring-1 ring-white/20">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-slate-900 tracking-tight leading-none">Leadership</span>
+              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1">Intelligence</span>
+            </div>
           </div>
+          <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 rounded-xl transition-all md:hidden"
+              title="Close Sidebar"
+          >
+              <PanelLeftClose className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {/* New chat button and search */}
-          <div className="px-1">
+        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-8">
+          {/* New chat button */}
+          <div className="space-y-4">
             <button
               onClick={createNewSession}
-              className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700"
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 text-slate-700 transition-all group active:scale-[0.98]"
             >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm font-medium">New chat</span>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold tracking-tight">New Conversation</span>
+              </div>
+              <kbd className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-lg">
+                ⌘ K
+              </kbd>
             </button>
 
-            <div className="mt-2 relative">
+            <div className="relative group">
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search chats"
-                className="w-full pl-3 pr-9 py-2 text-sm rounded-md border border-gray-100 bg-gray-50 text-gray-700"
+                placeholder="Search history..."
+                className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl border border-slate-200 bg-white text-slate-700 placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-400 transition-all outline-none"
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                 <Search className="w-4 h-4" />
               </div>
             </div>
           </div>
 
-          {sessions
-            .filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
-            .map(session => (
-            <div
-              key={session.id}
-              onClick={() => {
-                setActiveSessionId(session.id);
-                if (window.innerWidth < 768) setIsSidebarOpen(false);
-              }}
-              className={`
-                group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border border-transparent relative
-                ${activeSessionId === session.id ? 'bg-blue-50 text-blue-700 border-blue-100' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
-              `}
-            >
-              <MessageSquare className="w-4 h-4 flex-shrink-0" />
-              <div className="flex-1 truncate text-sm font-medium">
-                {session.title} {session.pinned && '📌'}
-              </div>
-              
-              <div className="relative">
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuSessionId(openMenuSessionId === session.id ? null : session.id);
-                    }}
-                    className={`p-1 rounded hover:bg-gray-200 transition-opacity ${openMenuSessionId === session.id ? 'opacity-100 bg-gray-200' : 'opacity-0 group-hover:opacity-100'}`}
-                >
-                    <MoreHorizontal className="w-4 h-4" />
-                </button>
-                
-                {openMenuSessionId === session.id && (
-                    <div className="absolute right-0 top-full mt-1 w-32 bg-white border rounded shadow-lg z-50 py-1">
-                        <button 
-                            onClick={(e) => togglePinSession(e, session.id)} 
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                            {session.pinned ? 'Unpin Chat' : 'Pin Chat'}
-                        </button>
-                        <button 
-                            onClick={(e) => renameSession(e, session.id)} 
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                            Rename Chat
-                        </button>
-                        <button 
-                            onClick={(e) => deleteSession(e, session.id)} 
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
-                        >
-                            Remove Chat
-                        </button>
-                    </div>
-                )}
-              </div>
+          {/* Chat History */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-2 mb-3">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Recent Sessions</h3>
+              <span className="text-[10px] font-bold text-slate-300 bg-slate-100 px-2 py-0.5 rounded-full">{Array.isArray(sessions) ? sessions.length : 0}</span>
             </div>
-          ))}
+            
+            <div className="space-y-1.5 px-0.5">
+              {Array.isArray(sessions) && sessions.length > 0 ? (
+                sessions
+                  .filter(s => (s.title || 'New Chat').toLowerCase().includes((searchQuery || '').toLowerCase()))
+                  .map(session => (
+                <div
+                  key={session.id}
+                  onClick={() => {
+                    setActiveSessionId(session.id);
+                    if (window.innerWidth < 768) setIsSidebarOpen(false);
+                  }}
+                  className={`
+                    group flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer transition-all relative
+                    ${activeSessionId === session.id 
+                      ? 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.06)] border border-slate-200/80 text-indigo-600' 
+                      : 'text-slate-600 hover:bg-white hover:shadow-sm hover:border-slate-200/50 border border-transparent'}
+                  `}
+                >
+                  <div className={`p-2 rounded-xl transition-all duration-300 ${activeSessionId === session.id ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500'}`}>
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 truncate text-sm font-semibold tracking-tight">
+                    {session.title}
+                  </div>
+                  
+                  {session.pinned && (
+                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-4 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                  )}
+
+                  <div className="relative flex items-center">
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuSessionId(openMenuSessionId === session.id ? null : session.id);
+                        }}
+                        className={`p-1.5 rounded-lg hover:bg-slate-100 transition-all ${openMenuSessionId === session.id ? 'opacity-100 bg-slate-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    >
+                        <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    
+                    {openMenuSessionId === session.id && (
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 py-2 border border-slate-100 animate-fade-in ring-1 ring-black/5">
+                            <button 
+                                onClick={(e) => togglePinSession(e, session.id)} 
+                                className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                            >
+                                <span className="opacity-60">{session.pinned ? '📍' : '📌'}</span>
+                                {session.pinned ? 'Unpin Chat' : 'Pin Chat'}
+                            </button>
+                            <button 
+                                onClick={(e) => renameSession(e, session.id)} 
+                                className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-slate-50 flex items-center gap-3 transition-colors text-slate-600"
+                            >
+                                <span className="opacity-60">✏️</span>
+                                Rename
+                            </button>
+                            <div className="h-px bg-slate-100 my-1.5 mx-2" />
+                            <button 
+                                onClick={(e) => deleteSession(e, session.id)} 
+                                className="w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-red-50 text-red-500 flex items-center gap-3 transition-colors"
+                            >
+                                <span className="opacity-60">🗑️</span>
+                                Delete session
+                            </button>
+                        </div>
+                    )}
+                  </div>
+                </div>
+              ))
+              ) : (
+                <div className="text-center py-6 px-4">
+                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 opacity-50">
+                    <MessageSquare className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">No history yet</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
-        {/* User Profile / Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-sm font-medium text-white shadow-sm">
-                LA
+        {/* User Profile */}
+        <div className="p-4 border-t border-slate-100 bg-[#f8fafc]">
+           <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all cursor-pointer group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-indigo-100 ring-1 ring-white/20">
+                  NM
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-slate-900 leading-tight">Ngo Minh Quan</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_4px_rgba(99,102,241,0.5)]"></span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Pro Plan</span>
+                  </div>
+                </div>
               </div>
-              <div className="text-sm font-medium text-gray-700 truncate">User</div>
+              <MoreHorizontal className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
            </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full relative w-full bg-white">
-        {/* Top full-width header with centered title */}
-        <div className="w-full border-b bg-white p-4 flex items-center justify-center sticky top-0 z-40">
-          <h1 className="text-lg font-bold text-gray-800">Leadership Assistant</h1>
-        </div>
-        {/* Toggle Button when sidebar is closed */}
-        {!isSidebarOpen && (
-            <div className="absolute top-4 left-4 z-50">
-                <button 
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="p-2 bg-white hover:bg-gray-50 rounded-md shadow-md border border-gray-200 text-gray-600 hover:text-blue-600 transition-all"
-                    title="Open Sidebar"
-                >
-                    <PanelLeftOpen className="w-5 h-5" />
-                </button>
+      <div className="flex-1 flex flex-col h-full relative w-full bg-white overflow-hidden">
+        {/* Top header */}
+        <div className="w-full border-b border-slate-100 bg-white/70 backdrop-blur-xl p-4 flex items-center justify-between sticky top-0 z-40 transition-all">
+          <div className="flex items-center gap-4">
+            {!isSidebarOpen && (
+              <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 transition-all active:scale-95"
+                  title="Open Sidebar"
+              >
+                  <PanelLeftOpen className="w-5 h-5" />
+              </button>
+            )}
+            <div className="flex flex-col">
+              <h1 className="text-sm font-bold text-slate-900 tracking-tight">
+                {activeSession?.title || 'Leadership Assistant'}
+              </h1>
+              {activeSession && <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Conversation ID: {activeSession.id.slice(-6)}</span>}
             </div>
-        )}
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button
+                onClick={() => setShowMarketplace(!showMarketplace)}
+                className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl transition-all uppercase tracking-wider border border-indigo-100"
+            >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                {showMarketplace ? 'Back to Chat' : 'Marketplace'}
+            </button>
+            <div className="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/50 flex items-center gap-2 shadow-sm shadow-emerald-50">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-[0.1em]">Cloud Sync Active</span>
+            </div>
+          </div>
+        </div>
 
         {activeSession ? (
           <Chat 
@@ -307,6 +384,8 @@ function App() {
             title={activeSession.title}
             initialMessages={activeSession.messages}
             onMessagesUpdate={(msgs) => updateSessionMessages(activeSession.id, msgs)}
+            showMarketplace={showMarketplace}
+            setShowMarketplace={setShowMarketplace}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-white">

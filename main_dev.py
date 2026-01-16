@@ -138,13 +138,9 @@ def search(request: Request):
     image_description = request.image_description
     result = vectorstore.search(collection_name=os.getenv("COLLECTION_NAME"), query=query, image_description=image_description)
     text = result["text"]
-    if not isinstance(storage_client, S3ClientWrapper):
-        return {
+    return {
             "text": text
         }
-    return {
-        "text": get_presigned_url(text)
-    }
 
 @app.post("/delete-file-object")
 def delete_file(file_name: str):

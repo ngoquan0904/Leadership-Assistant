@@ -1,103 +1,38 @@
 version: "3.9"
 
 services:
-  # Calendar Agent
-  calendar_agent:
-    build: .
-    command: >
-      python agents/calendar_langgraph/main.py
-      --agent-card agent_cards/calendar_agent.json
-      --port 10002
-    ports:
-      - "10002:10002"
-    environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - client_secrets_file=/app/agent_cards/client_secret.json
-    volumes:
-      - ./client_secret.json:/app/agent_cards/client_secret.json
-
-  # Gmail Agent
-  gmail_agent:
-    build: .
-    command: >
-      python agents/calendar_langgraph/main.py
-      --agent-card agent_cards/gmail_agent.json
-      --port 10003
-    ports:
-      - "10003:10003"
-    environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - client_secrets_file=/app/agent_cards/client_secret.json
-      - sender_email=${sender_email}
-      - sender_password=${sender_password}
-    volumes:
-      - ./client_secret.json:/app/agent_cards/client_secret.json
-  # HR Agent
-  hr_agent:
-    build: .
-    command: >
-      python agents/calendar_langgraph/main.py
-      --agent-card agent_cards/hr_agent.json
-      --port 10004
-    ports:
-      - "10004:10004"
-    environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - NEO4J_URI=${NEO4J_URI}
-      - NEO4J_USERNAME=${NEO4J_USERNAME}
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
-    depends_on:
-      - neo4j_service
-
-  orchestrator:
-    build: .
-    command: >
-      bash -c "cd agents && adk web"
-    ports:
-      - "8000:8000"
-    environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-    depends_on:
-      - calendar_agent
-      - gmail_agent
-      - hr_agent
-
-  # Neo4j MCP service (dùng uvx mcp-neo4j-cypher)
-  neo4j_service:
-    image: neo4j:5.15
-    environment:
-      - NEO4J_AUTH=${NEO4J_USERNAME}/${NEO4J_PASSWORD}
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    volumes:
-      - neo4j_data:/data
-
   document_extraction:
     image: ngoquan0904/tool_use_agent:1.0
-    container_name: document_extraction
+    container_name: document_extraction_leadership
     ports:
       - "8080:8080"
     environment:
-      - HF_TOKEN=${HF_TOKEN}
-      - LLM_API=${LLM_API}
-      - MINIO_BUCKET=${MINIO_BUCKET}
-      - MINIO_HOST=${MINIO_HOST}
-      - MINIO_PORT=${MINIO_PORT}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - COLLECTION_NAME=${COLLECTION_NAME}
-      - QDRANT_HOST=${QDRANT_HOST}
-      - QDRANT_PORT=${QDRANT_PORT}
-      - S3_ACESS_KEY=${S3_ACESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_REGION_NAME=${S3_REGION_NAME}
-      - NEO4J_URI=${NEO4J_URI}
-      - NEO4J_USERNAME=${NEO4J_USERNAME}
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      HF_TOKEN: ${HF_TOKEN}
+      LLM_API: ${LLM_API}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      COLLECTION_NAME: ${COLLECTION_NAME}
+      QDRANT_HOST: ${QDRANT_HOST}
+      QDRANT_PORT: ${QDRANT_PORT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_REGION_NAME: ${S3_REGION_NAME}
+      NEO4J_URI: ${NEO4J_URI}
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+    volumes:
+      - .:/app
+    depends_on:
+      - qdrant
+      - minio
+    command: ["uvicorn", "main_dev:app", "--host", "0.0.0.0", "--port", "8080"]
+
   qdrant:
     image: qdrant/qdrant:v1.15.1
-    container_name: qdrant_db
+    container_name: qdrant_leadership
     ports:
       - "6333:6333"
     volumes:
@@ -105,7 +40,7 @@ services:
 
   minio:
     image: quay.io/minio/minio
-    container_name: minio
+    container_name: minio_leadership
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -115,7 +50,138 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+  calendar_agent:
+    profiles:
+      - calendar
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: calendar_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/calendar_agent.json
+      --port 10002
+      --host 0.0.0.0
+    ports:
+      - "10002:10002"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      client_secrets_file: /app/agent_cards/client_secret.json
+    volumes:
+      - .:/app
+      - ./agent_cards/client_secret.json:/app/client_secret.json
+
+  gmail_agent:
+    profiles:
+      - gmail
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: gmail_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/gmail_agent.json
+      --port 10003
+      --host 0.0.0.0
+    ports:
+      - "10003:10003"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      client_secrets_file: /app/agent_cards/client_secret.json
+      sender_email: ${sender_email}
+      sender_password: ${sender_password}
+    volumes:
+      - .:/app
+      - ./agent_cards/client_secret.json:/app/client_secret.json
+    env_file:
+      - ./agent_cards/gmail.env
+
+  document_agent:
+    profiles:
+      - document
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: document_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/document_agent.json
+      --port 10004
+      --host 0.0.0.0
+    ports:
+      - "10004:10004"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      DOCUMENT_EXTRACTION_HOST: document_extraction
+      DOCUMENT_EXTRACTION_PORT: 8080
+    volumes:
+      - .:/app
+
+  orchestrator:
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: orchestrator
+    command: ["uvicorn", "agents.server:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8001:8000"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
+      # Default: no agent URLs. Start sub-agents when user enables them
+      AGENT_URLS: '[]'
+    # Note: sub-agents are profile-gated and should be started on-demand.
+    # Remove automatic depends_on so orchestrator always starts independently.
+      # - ek_agent
+    volumes:
+      - .:/app
+
+  frontend:
+    build: ./frontend
+    container_name: frontend_leadership
+    ports:
+      - "8000:80"
+    depends_on:
+      - orchestrator
+
+  # ek_agent:
+  #   image: ngoquan0904/leadership-assistant:1.0
+  #   container_name: ek_agent
+  #   command: >
+  #     python agents/sub_agent/main.py
+  #     --agent-card agent_cards/ek_agent.json
+  #     --port 10004
+  #     --host 0.0.0.0
+  #   ports:
+  #     - "10004:10004"
+  #   environment:
+  #     NOTION_TOKEN: ${NOTION_TOKEN}
+  #     AUTH_TOKEN: ${AUTH_TOKEN}
+  #     NEO4J_URI: ${NEO4J_URI}
+  #     NEO4J_USERNAME: ${NEO4J_USERNAME}
+  #     NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+  #     NEO4J_DATABASE: ${NEO4J_DATABASE}
+  #   volumes:
+  #     - .:/app
+  #   depends_on:
+  #     - notion_mcp
+  #     - neo4j_mcp
+
+  # notion_mcp:
+  #   image: node:18
+  #   container_name: notion_mcp
+  #   command: >
+  #     sh -c "npx -y @notionhq/notion-mcp-server --transport http --port 3000 --auth-token ${AUTH_TOKEN} --host 0.0.0.0"
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     NOTION_TOKEN: ${NOTION_TOKEN}
+  #     AUTH_TOKEN: ${AUTH_TOKEN}
+
+  # neo4j_mcp:
+  #   image: node:18
+  #   container_name: neo4j_mcp
+  #   command: >
+  #     sh -c "npx -y uvx mcp-neo4j-cypher --transport sse --server-port 8001 --server-host 0.0.0.0"
+  #   ports:
+  #     - "8001:8001"
+  #   environment:
+  #     NEO4J_URI: ${NEO4J_URI}
+  #     NEO4J_USERNAME: ${NEO4J_USERNAME}
+  #     NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
 volumes:
-  neo4j_data:
   qdrant_data:
   minio_data:

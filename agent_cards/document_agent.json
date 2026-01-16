@@ -1,0 +1,31 @@
+{
+    "name": "Document Agent",
+    "description": "An agent that helps users retrieve relevant information chunks from the internal business and company documentation repository.",
+    "url": "http://document_agent:10004/",
+    "version": "1.0.0",
+    "capabilities": {
+        "streaming": true,
+        "pushNotifications": true,
+        "stateTransitionHistory": false
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "GetRelevantChunks",
+            "name": "Get Relevant Chunks",
+            "description": "Retrieve relevant information chunks from the internal business and company documentation repository based on the user's query.",
+            "tags": ["document", "search", "query", "internal documentation", "company"],
+            "examples": [
+                "Find information about the company's internal policies.",
+                "What are the regulations for business travel?"
+            ]
+        }
+    ]
+}

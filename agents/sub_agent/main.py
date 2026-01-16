@@ -13,6 +13,9 @@ from agent_executor import AgentExecutor
 from calendar_agent import CalendarAgent
 from gmail_agent import GmailAgent
 from ek_agent import EnterpriseKnowledgeAgent
+from hr_agent import HRAgent
+from document_agent import DocumentAgent
+from project_manager_agent import ProjectManagerAgent
 logger = logging.getLogger(__name__)
 
 async def get_agent_executor(agent_card: AgentCard):
@@ -24,6 +27,18 @@ async def get_agent_executor(agent_card: AgentCard):
         elif agent_card.name == "Gmail Agent":
             logger.info(f"Initialize {agent_card.name}")
             agent = GmailAgent()
+            return AgentExecutor(agent)
+        elif agent_card.name == "HR Agent":
+            logger.info(f"Initialize {agent_card.name}")
+            agent = await HRAgent.create()
+            return AgentExecutor(agent)
+        elif agent_card.name == "Document Agent":
+            logger.info(f"Initialize {agent_card.name}")
+            agent = DocumentAgent()
+            return AgentExecutor(agent)
+        elif agent_card.name == "Project Manager Agent":
+            logger.info(f"Initialize {agent_card.name}")
+            agent = await ProjectManagerAgent.create()
             return AgentExecutor(agent)
         elif agent_card.name == "Enterprise Knowledge Agent":
             logger.info(f"Initialize {agent_card.name}")

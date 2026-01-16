@@ -1,0 +1,81 @@
+{
+    "name": "HR Agent",
+    "description": "An agent that helps users manage human resources, employee records, leave requests, and recruitment processes.",
+    "url": "http://hr_agent:10006/",
+    "version": "1.0.0",
+    "capabilities": {
+        "streaming": true,
+        "pushNotifications": true,
+        "stateTransitionHistory": false
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "EmployeeSearch",
+            "name": "Search Employees",
+            "description": "Search for employees based on name, skills, department, or position.",
+            "tags": ["hr", "employee", "search", "talent"],
+            "examples": [
+                "Find all employees with Python skills.",
+                "Search for employees in the Marketing department."
+            ]
+        },
+        {
+            "id": "GetEmployeeInfo",
+            "name": "Get Employee Information",
+            "description": "Retrieve detailed profile information, contact details, and history of a specific employee.",
+            "tags": ["hr", "employee", "info", "profile"],
+            "examples": [
+                "Show me the profile of Nguyen Van A.",
+                "Get contact details for the manager of the IT department."
+            ]
+        },
+        {
+            "id": "ManageLeaveRequests",
+            "name": "Manage Leave Requests",
+            "description": "Track, submit, and approve or reject employee leave requests.",
+            "tags": ["hr", "leave", "vacation", "request"],
+            "examples": [
+                "How many days of leave does Tran Thi B have left?",
+                "Approve the leave request for John Doe from next Monday."
+            ]
+        },
+        {
+            "id": "UpdateEmployeeRecord",
+            "name": "Update Employee Record",
+            "description": "Update existing employee information such as contact details, position, or skills.",
+            "tags": ["hr", "update", "record", "employee"],
+            "examples": [
+                "Update phone number for employee ID 5678.",
+                "Add 'Machine Learning' to the skills list of Alice Smith."
+            ]
+        },
+        {
+            "id": "RecruitmentManagement",
+            "name": "Recruitment Management",
+            "description": "Manage job postings, track applications, and schedule interviews.",
+            "tags": ["hr", "recruitment", "hiring", "job"],
+            "examples": [
+                "List all open positions for Software Engineer.",
+                "Show the status of candidates who applied for the Designer role."
+            ]
+        },
+        {
+            "id": "PerformanceReview",
+            "name": "Performance Review",
+            "description": "Access and manage employee performance evaluations and feedback.",
+            "tags": ["hr", "performance", "review", "feedback"],
+            "examples": [
+                "Get the last performance review for Bob.",
+                "Schedule a performance evaluation for the engineering team."
+            ]
+        }
+    ]
+}

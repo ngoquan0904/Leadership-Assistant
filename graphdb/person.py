@@ -183,7 +183,7 @@ class HasSkill(BaseModel):
     Relationship between Person and Skill with proficiency.
     """
     skill: Skill = Field(..., description="The skill")
-    proficiency: Optional[int]  = Field(..., ge=1, le=5, description="Skill proficiency level (1-5): "
+    proficiency: Optional[int]  = Field(None, ge=1, le=5, description="Skill proficiency level (1-5): "
                                                                      "1=Beginner (basic familiarity, learning), "
                                                                      "2=Intermediate (can work with guidance), "
                                                                      "3=Proficient (can work independently), "

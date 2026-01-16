@@ -1,0 +1,8 @@
+1. Fix lỗi kết nối tới graphdb
+3. thêm import document của hr agent và document agent
+2. thêm thông tin cá nhân của user để tăng ngữ cảnh cá nhân
+3. Phần footer sẽ thêm format, và ochestrator sẽ tự thay footer
+4. Fix không xem đc lịch sử chat
+2. Chuyển hết sang optional và phải qua install
+1. Nghiên cứu mở rộng project manager agent
+    1.1 Thêm google sheet hoặc mở rộng notion
