@@ -13,13 +13,14 @@ from dotenv import load_dotenv
 load_dotenv()
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 
 from DocumentExtraction.extract_document import DocumentExtraction
 from DocumentExtraction.chunking import ChunkModule
-from DocumentExtraction.minio_client import MinioClientWrapper
+# from DocumentExtraction.minio_client import MinioClientWrapper
 from DocumentExtraction.db import QdrantVectorstore
 from DocumentExtraction.utils import _folder_name_from_filename, parse_image_path
 from utils.minio import MinioClientWrapper
@@ -29,6 +30,38 @@ from graphdb.person import Person, get_short_id
 
 mode = os.getenv("MODE")
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/list-files")
+def list_files():
+    bucket = os.getenv("STORAGE_BUCKET")
+    prefix = os.getenv("STORAGE_FOLDER", "")
+    logger.info(f"Listing files from bucket: {bucket}, prefix: {prefix}")
+    try:
+        objects = storage_client.list_objects(bucket, prefix=prefix)
+        # Filter for .pdf and .docx
+        files = []
+        for obj in objects:
+            name = obj["object_name"]
+            if name.lower().endswith(('.pdf', '.docx')):
+                files.append({
+                    "name": os.path.basename(name),
+                    "path": name,
+                    "size": obj["size"],
+                    "last_modified": obj["last_modified"].isoformat() if hasattr(obj["last_modified"], 'isoformat') else str(obj["last_modified"])
+                })
+        logger.info(f"Found {len(files)} files")
+        return files
+    except Exception as e:
+        logger.error(f"Error listing files: {e}")
+        return []
+
 storage_client = MinioClientWrapper(
     endpoint=f"{os.getenv('MINIO_HOST', '127.0.0.1')}:{os.getenv('MINIO_PORT', '9000')}",
     access_key=os.getenv("MINIO_ACCESS_KEY"),
@@ -102,20 +135,16 @@ def process_bytes_upload_and_process(file_bytes: bytes, filename: str):
             pass
 
 @app.post("/upload-file")
-async def create_upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
+async def create_upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     """
     Receive uploaded file, upload it to MinIO immediately (no persistent save to D:),
     and trigger processing (background if available). Returns file name and processing status.
     """
     # read bytes into memory right away so BackgroundTasks can use them after request ends
     content = await file.read()
-    if background_tasks is not None:
-        background_tasks.add_task(process_bytes_upload_and_process, content, file.filename)
-        return {"filename": file.filename, "status": "processing"}
-    else:
-        process_bytes_upload_and_process(content, file.filename)
-        return {"filename": file.filename, "status": "done"}
-    
+    background_tasks.add_task(process_bytes_upload_and_process, content, file.filename)
+    return {"filename": file.filename, "status": "processing"}
+
 def get_presigned_url(text):
     image_urls = re.findall(r'http[s]?://\S+\.(?:png|jpg|jpeg|gif|pdf|docx)', text)
     for path in set(image_urls):
@@ -220,4 +249,3 @@ if __name__ == "__main__":
     file_path = r"D:\Document\Code\Projects\Tool-use_Agent\DocumentExtraction\input\scribe_test.pdf"
     process_document(file_path)
     # remove_object(r"D:\Document\Code\Projects\Tool-use_Agent\DocumentExtraction\input\scribe_test.pdf")
-

@@ -1,0 +1,198 @@
+version: "3.9"
+
+services:
+  document_extraction:
+    image: ngoquan0904/tool_use_agent:1.0
+    container_name: document_extraction_leadership
+    ports:
+      - "5080:8080"
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+      LLM_API: ${LLM_API}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      COLLECTION_NAME: ${COLLECTION_NAME}
+      QDRANT_HOST: ${QDRANT_HOST}
+      QDRANT_PORT: ${QDRANT_PORT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_REGION_NAME: ${S3_REGION_NAME}
+      NEO4J_URI: ${NEO4J_URI}
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+    volumes:
+      - .:/app
+    depends_on:
+      - qdrant
+      - minio
+    command: ["uvicorn", "main_dev:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+
+  qdrant:
+    image: qdrant/qdrant:v1.15.1
+    container_name: qdrant_leadership
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio_leadership
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+  notion_mcp:
+    image: node:18
+    container_name: notion_mcp
+    command: >
+      sh -c "npx -y @notionhq/notion-mcp-server --transport http --port 3000 --auth-token ${AUTH_TOKEN} --host 0.0.0.0"
+    ports:
+      - "3000:3000"
+    environment:
+      NOTION_TOKEN: ${NOTION_TOKEN}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+  calendar_agent:
+    build: .
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: calendar_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/calendar_agent.json
+      --port 10002
+      --host 0.0.0.0
+    ports:
+      - "10002:10002"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      client_secrets_file: /app/agent_cards/client_secret.json
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - .:/app
+
+  gmail_agent:
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: gmail_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/gmail_agent.json
+      --port 10003
+      --host 0.0.0.0
+    ports:
+      - "10003:10003"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      client_secrets_file: /app/agent_cards/client_secret.json
+      sender_email: ${sender_email}
+      sender_password: ${sender_password}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - .:/app
+    env_file:
+      - ./agent_cards/gmail.env
+
+  neo4j_mcp:
+    image: python:3.11-slim
+    container_name: neo4j_mcp
+    command: >
+      sh -c "pip install uv && uvx mcp-neo4j-cypher --transport sse --db-url ${NEO4J_URI} --username ${NEO4J_USERNAME} --password ${NEO4J_PASSWORD} --server-host 0.0.0.0 --server-port 5001"
+    ports:
+      - "5001:5001"
+    environment:
+      NEO4J_URI: ${NEO4J_URI}
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+  hr_agent:
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: hr_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/hr_agent.json
+      --port 10006
+      --host 0.0.0.0
+    ports:
+      - "10006:10006"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      NEO4J_MCP_HOST: neo4j_mcp
+    volumes:
+      - .:/app
+    depends_on:
+      - neo4j_mcp
+
+  document_agent:
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: document_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/document_agent.json
+      --port 10004
+      --host 0.0.0.0
+    ports:
+      - "10004:10004"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      DOCUMENT_EXTRACTION_HOST: document_extraction
+      DOCUMENT_EXTRACTION_PORT: 8080
+    depends_on:
+      - document_extraction
+    volumes:
+      - .:/app
+  project_manager_agent:
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: project_manager_agent
+    command: >
+      python agents/sub_agent/main.py
+      --agent-card agent_cards/project_manager_agent.json
+      --port 10005
+      --host 0.0.0.0
+    ports:
+      - "10005:10005"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      NOTION_MCP_HOST: notion_mcp 
+      AUTH_TOKEN: ${AUTH_TOKEN}
+    depends_on:
+      - notion_mcp
+    volumes:
+      - .:/app
+
+  orchestrator:
+    image: ngoquan0904/leadership-assistant:1.0
+    container_name: orchestrator
+    command: ["uvicorn", "agents.server:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8001:8000"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
+      AGENT_URLS: '["http://calendar_agent:10002", "http://gmail_agent:10003", "http://document_agent:10004", "http://project_manager_agent:10005", "http://hr_agent:10006"]'
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      - document_agent
+      - gmail_agent
+      - calendar_agent
+      - hr_agent
+    volumes:
+      - .:/app
+
+  frontend:
+    build: ./frontend
+    container_name: frontend_leadership
+    ports:
+      - "8000:80"
+    depends_on:
+      - orchestrator
+
+volumes:
+  qdrant_data:
+  minio_data:

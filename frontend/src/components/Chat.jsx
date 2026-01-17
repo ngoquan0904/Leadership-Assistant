@@ -3,10 +3,11 @@ import { Send, Bot, User, Loader2, AlertCircle, LayoutGrid } from 'lucide-react'
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Marketplace from './Marketplace';
+import Settings from './Settings';
 
 const BACKEND_URL = "ws://localhost:8001/ws/chat";
 
-export default function Chat({ sessionId, title, initialMessages, onMessagesUpdate, showMarketplace, setShowMarketplace }) {
+export default function Chat({ sessionId, title, initialMessages, onMessagesUpdate, showMarketplace, setShowMarketplace, showSettings, setShowSettings }) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState(initialMessages || []);
@@ -167,6 +168,10 @@ export default function Chat({ sessionId, title, initialMessages, onMessagesUpda
       handleSubmit(e);
     }
   };
+
+  if (showSettings) {
+    return <Settings onBack={() => setShowSettings(false)} />;
+  }
 
   if (showMarketplace) {
     return <Marketplace onClose={() => setShowMarketplace(false)} />;

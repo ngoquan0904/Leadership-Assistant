@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Chat from './components/Chat';
-import { MessageSquare, Plus, Trash2, Menu, PanelLeftClose, PanelLeftOpen, MoreHorizontal, Search, LayoutGrid, Bot } from 'lucide-react';
+import Settings from './components/Settings';
+import { MessageSquare, Plus, Trash2, Menu, PanelLeftClose, PanelLeftOpen, MoreHorizontal, Search, LayoutGrid, Bot, Settings as SettingsIcon } from 'lucide-react';
 
 function App() {
   const [sessions, setSessions] = useState(() => {
@@ -23,6 +24,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [draftSession, setDraftSession] = useState(null);
   const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const commitLockRef = React.useRef(new Set());
 
   // Initialization: ensure we have an active session
@@ -364,11 +366,33 @@ function App() {
           
           <div className="flex items-center gap-3">
             <button
-                onClick={() => setShowMarketplace(!showMarketplace)}
-                className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl transition-all uppercase tracking-wider border border-indigo-100"
+                onClick={() => {
+                  setShowSettings(!showSettings);
+                  if (showMarketplace) setShowMarketplace(false);
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-wider border ${
+                  showSettings 
+                    ? 'bg-indigo-600 text-white border-indigo-600' 
+                    : 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-600 hover:text-white'
+                }`}
+                title="Agent Settings"
+            >
+                <SettingsIcon className="w-3.5 h-3.5" />
+                {showSettings ? 'Back' : 'Settings'}
+            </button>
+            <button
+                onClick={() => {
+                  setShowMarketplace(!showMarketplace);
+                  if (showSettings) setShowSettings(false);
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-wider border ${
+                  showMarketplace 
+                    ? 'bg-indigo-600 text-white border-indigo-600' 
+                    : 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-600 hover:text-white'
+                }`}
             >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                {showMarketplace ? 'Back to Chat' : 'Marketplace'}
+                {showMarketplace ? 'Back' : 'Marketplace'}
             </button>
             <div className="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/50 flex items-center gap-2 shadow-sm shadow-emerald-50">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -386,6 +410,8 @@ function App() {
             onMessagesUpdate={(msgs) => updateSessionMessages(activeSession.id, msgs)}
             showMarketplace={showMarketplace}
             setShowMarketplace={setShowMarketplace}
+            showSettings={showSettings}
+            setShowSettings={setShowSettings}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-white">
